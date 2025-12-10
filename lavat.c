@@ -127,18 +127,16 @@ int main(int argc, char *argv[]) {
         }
         float dx = balls[j].x - balls[i].x;
         float dy = balls[j].y - balls[i].y;
-        float dist2 = dx * dx + dy * dy + 0.001f; // softening term
+        float dist2 = dx * dx + dy * dy; // softening term
+        float dist = sqrtf(dist2);
 
-        float force = 7 / dist2; // k > 0 attraction, k < 0 repulsion
+        float force = 3 / dist; // k > 0 attraction, k < 0 repulsion
 
-        float r0 = 3;
+        float r0 = 10;
 
-        float distance = sqrtf(dist2);
-        if (distance < r0) {
-          force += -7 / dist2;
+        if (dist < r0) {
+          force += -5 / dist;
         }
-
-        float dist = sqrtf(dx * dx + dy * dy);
 
         float fx = (force)*dx / dist;
         float fy = (force)*dy / dist;
@@ -183,7 +181,7 @@ int main(int argc, char *argv[]) {
       if (balls[i].y + balls[i].dy < margin) {
         balls[i].dgy += 3;
       }
-      balls[i].x += balls[i].dx + (int)balls[i].dgy;
+      balls[i].x += balls[i].dx + (int)balls[i].dgx;
       balls[i].y += balls[i].dy + (int)balls[i].dgy;
 
       balls[i].dgy *= 0.8;
