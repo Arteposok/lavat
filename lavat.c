@@ -21,6 +21,8 @@ typedef struct {
   int dy;
   double dgy;
   double dgx;
+  double dgyt;
+  double dgxt;
 } Ball;
 
 uintattr_t pallete[11];
@@ -141,15 +143,19 @@ int main(int argc, char *argv[]) {
         float fx = (force)*dx / dist;
         float fy = (force)*dy / dist;
 
-        balls[i].dgx += fx;
-        balls[i].dgy += fy;
-        balls[j].dgx -= fx;
-        balls[j].dgy -= fy;
+        balls[i].dgxt += fx;
+        balls[i].dgyt += fy;
+        balls[j].dgxt -= fx;
+        balls[j].dgyt -= fy;
       }
     }
     for (int i = 0; i < nballs; i++) {
-      balls[i].dgy /= nballs - 1;
-      balls[i].dgx /= nballs - 1;
+      balls[i].dgyt /= nballs - 1;
+      balls[i].dgxt /= nballs - 1;
+      balls[i].dgy += balls[i].dgyt;
+      balls[i].dgx += balls[i].dgxt;
+      balls[i].dgxt = 0;
+      balls[i].dgyt = 0;
     }
     // move balls
     for (int i = 0; i < nballs; i++) {
@@ -180,8 +186,8 @@ int main(int argc, char *argv[]) {
       balls[i].x += balls[i].dx + (int)balls[i].dgy;
       balls[i].y += balls[i].dy + (int)balls[i].dgy;
 
-      balls[i].dgy *= 0.9;
-      balls[i].dgx *= 0.9;
+      balls[i].dgy *= 0.6;
+      balls[i].dgx *= 0.6;
     }
 
     // render
