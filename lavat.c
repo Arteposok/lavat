@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
     // move balls
     for (int i = 0; i < nballs; i++) {
 
-      float interval = 0.05f / speed;
+      float interval = 0.01f / speed;
       if (tick >= last_tick + interval) {
         balls[i].dgy += 0.1;
         last_tick = tick;
@@ -173,13 +173,6 @@ int main(int argc, char *argv[]) {
       if (balls[i].y + balls[i].dy < margin) {
         balls[i].dgy += 2;
       }
-            if (balls[i].x + balls[i].dx >= maxX - margin) {
-              balls[i].dgx -= 2;
-            }
-
-            if (balls[i].x + balls[i].dx < margin) {
-              balls[i].dgx += 2;
-            }
       balls[i].x += balls[i].dx + (int)balls[i].dgy;
       balls[i].y += balls[i].dy + (int)balls[i].dgy;
 
