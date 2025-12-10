@@ -4,6 +4,7 @@
 
 #include "termbox.h"
 #include <float.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -118,17 +119,27 @@ int main(int argc, char *argv[]) {
   while (1) {
 
     for (int i = 0; i < nballs; i++) {
-      for (int j = i + 1; j < nballs; j++) {
+      for (int j = 0; j < nballs; j++) {
+        if (balls[i].x == balls[j].x && balls[i].y == balls[j].y) {
+          continue;
+        }
         float dx = balls[j].x - balls[i].x;
         float dy = balls[j].y - balls[i].y;
         float dist2 = dx * dx + dy * dy + 0.001f; // softening term
 
-        float force = 2 / dist2; // k > 0 attraction, k < 0 repulsion
-        float force2 = -1 / dist2; // k > 0 attraction, k < 0 repulsion
+        float force = 1 / dist2; // k > 0 attraction, k < 0 repulsion
 
+        float r0 = 3;
 
-        float fx = (force2 + force) * dx;
-        float fy = (force2 + force) * dy;
+        float distance = sqrtf(dist2);
+        if (distance < r0) {
+          force += -2 / dist2;
+        }
+
+        float dist = sqrtf(dx * dx + dy * dy);
+
+        float fx = (force)*dx / dist;
+        float fy = (force)*dy / dist;
 
         balls[i].dgx += fx;
         balls[i].dgy += fy;
@@ -156,13 +167,19 @@ int main(int argc, char *argv[]) {
       }
 
       if (balls[i].y + balls[i].dy >= maxY - margin) {
-        balls[i].dgy -= 1;
+        balls[i].dgy -= 2;
       }
 
       if (balls[i].y + balls[i].dy < margin) {
-        balls[i].dgy += 1;
+        balls[i].dgy += 2;
       }
+            if (balls[i].x + balls[i].dx >= maxX - margin) {
+              balls[i].dgx -= 2;
+            }
 
+            if (balls[i].x + balls[i].dx < margin) {
+              balls[i].dgx += 2;
+            }
       balls[i].x += balls[i].dx + (int)balls[i].dgy;
       balls[i].y += balls[i].dy + (int)balls[i].dgy;
 

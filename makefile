@@ -1,7 +1,9 @@
 PREFIX = /usr/local
+CC = gcc
+CFLAGS = -O2 -Wall
 
 lavat: lavat.c
-	$(CC) lavat.c -o lavat
+	$(CC) lavat.c -o lavat -lm
 
 .PHONY: clean
 clean:
