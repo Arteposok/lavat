@@ -130,12 +130,12 @@ int main(int argc, char *argv[]) {
         float dist2 = dx * dx + dy * dy; // softening term
         float dist = sqrtf(dist2);
 
-        float force = 3 / dist; // k > 0 attraction, k < 0 repulsion
+        float force = 5 / dist; // k > 0 attraction, k < 0 repulsion
 
-        float r0 = 10;
+        float r0 = 6;
 
         if (dist < r0) {
-          force += -5 / dist;
+          force += -15 / dist;
         }
 
         float fx = (force)*dx / dist;
@@ -157,13 +157,6 @@ int main(int argc, char *argv[]) {
     }
     // move balls
     for (int i = 0; i < nballs; i++) {
-
-      float interval = 0.01f / speed;
-      if (tick >= last_tick + interval) {
-        balls[i].dgy += 0.1;
-        last_tick = tick;
-      }
-
       if (balls[i].x + balls[i].dx >= maxX - margin ||
           balls[i].x + balls[i].dx < margin) {
         balls[i].dx *= -1;
@@ -175,11 +168,18 @@ int main(int argc, char *argv[]) {
       }
 
       if (balls[i].y + balls[i].dy >= maxY - margin) {
-        balls[i].dgy -= 3;
+        balls[i].dgy -= 2;
       }
 
       if (balls[i].y + balls[i].dy < margin) {
-        balls[i].dgy += 3;
+        balls[i].dgy += 2;
+      }
+      if (balls[i].x + balls[i].dx >= maxX - margin) {
+        balls[i].dgx -= 2;
+      }
+
+      if (balls[i].x + balls[i].dx < margin) {
+        balls[i].dgx += 2;
       }
       balls[i].x += balls[i].dx + (int)balls[i].dgx;
       balls[i].y += balls[i].dy + (int)balls[i].dgy;
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
 
           if (rim) {
             if (sum[0] > sumConst2) {
-              tb_printf(i, j, color, 0, custom);
+              tb_printf(i, j, TB_RED, 0, custom);
             }
           }
         }
