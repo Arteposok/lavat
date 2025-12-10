@@ -167,11 +167,11 @@ int main(int argc, char *argv[]) {
       }
 
       if (balls[i].y + balls[i].dy >= maxY - margin) {
-        balls[i].dgy -= 2;
+        balls[i].dgy -= 3;
       }
 
       if (balls[i].y + balls[i].dy < margin) {
-        balls[i].dgy += 2;
+        balls[i].dgy += 3;
       }
       balls[i].x += balls[i].dx + (int)balls[i].dgy;
       balls[i].y += balls[i].dy + (int)balls[i].dgy;
