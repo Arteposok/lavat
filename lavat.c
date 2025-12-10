@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
 
         float distance = sqrtf(dist2);
         if (distance < r0) {
-          force += -9 / dist2;
+          force += -7 / dist2;
         }
 
         float dist = sqrtf(dx * dx + dy * dy);
