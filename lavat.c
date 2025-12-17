@@ -11,18 +11,19 @@
 #include <time.h>
 #include <unistd.h>
 
-#define MIN_NBALLS 5
+#define MIN_NBALLS 1
 #define MAX_NBALLS 20
 
 typedef struct {
   int x;
   int y;
-  int dx;
-  int dy;
+  double px;
+  double py;
   double dgy;
   double dgx;
   double dgyt;
   double dgxt;
+  double mass;
 } Ball;
 
 uintattr_t pallete[11];
@@ -49,6 +50,7 @@ static float sumConst;
 static float sumConst2;
 static int maxX, maxY;
 static int speed;
+double dt = 0.01;
 static Ball balls[MAX_NBALLS] = {0};
 static struct tb_event event = {0};
 static short colors[] = {TB_WHITE, TB_RED,     TB_YELLOW, TB_BLUE,
@@ -102,6 +104,32 @@ int set_color(short *var, int *baseColor, char *optarg, short useGradient) {
   }
 }
 
+void compute_positions(Ball balls[]) {
+  for (int i = 0; i < nballs; i++) {
+    balls[i].dgxt = 0.0;
+    balls[i].dgyt = 0.0;
+  }
+  for (int i = 0; i < nballs; i++) {
+    for (int j = 0; j < nballs; j++) {
+      if (i == j)
+        continue;
+
+      double dx = balls[j].px - balls[i].px;
+      double dy = balls[j].py - balls[i].py;
+
+      double eps2 = 1e6;
+      double dist2 = dx * dx + dy * dy + eps2;
+      double dist = sqrt(dist2);
+
+      double force = 5e9 * balls[i].mass /
+                     (dist2 * dist); // k > 0 attraction, k < 0 repulsion
+
+      balls[i].dgxt += force * dx;
+      balls[i].dgyt += force * dy;
+    }
+  }
+}
+
 int main(int argc, char *argv[]) {
 
   if (!parse_options(argc, argv))
@@ -120,72 +148,46 @@ int main(int argc, char *argv[]) {
 
   while (1) {
 
+    compute_positions(balls);
+
+    // half-step velocity
     for (int i = 0; i < nballs; i++) {
-      for (int j = 0; j < nballs; j++) {
-        if (balls[i].x == balls[j].x && balls[i].y == balls[j].y) {
-          continue;
-        }
-        float dx = balls[j].x - balls[i].x;
-        float dy = balls[j].y - balls[i].y;
-        float dist2 = dx * dx + dy * dy; // softening term
-        float dist = sqrtf(dist2);
-
-        float force = 5 / dist; // k > 0 attraction, k < 0 repulsion
-
-        float r0 = 6;
-
-        if (dist < r0) {
-          force += -15 / dist;
-        }
-
-        float fx = (force)*dx / dist;
-        float fy = (force)*dy / dist;
-
-        balls[i].dgxt += fx;
-        balls[i].dgyt += fy;
-        balls[j].dgxt -= fx;
-        balls[j].dgyt -= fy;
-      }
+      balls[i].dgx += 0.5 * balls[i].dgxt * dt;
+      balls[i].dgy += 0.5 * balls[i].dgyt * dt;
     }
+
+    // full-step position
     for (int i = 0; i < nballs; i++) {
-      balls[i].dgyt /= nballs - 1;
-      balls[i].dgxt /= nballs - 1;
-      balls[i].dgy += balls[i].dgyt;
-      balls[i].dgx += balls[i].dgxt;
-      balls[i].dgxt = 0;
-      balls[i].dgyt = 0;
+      balls[i].px += balls[i].dgx * dt;
+      balls[i].py += balls[i].dgy * dt;
     }
-    // move balls
+
+    // recompute acceleration
+    compute_positions(balls);
+
+    // second half-step velocity
     for (int i = 0; i < nballs; i++) {
-      if (balls[i].x + balls[i].dx >= maxX - margin ||
-          balls[i].x + balls[i].dx < margin) {
-        balls[i].dx *= -1;
-      }
+      balls[i].dgx += 0.5 * balls[i].dgxt * dt;
+      balls[i].dgy += 0.5 * balls[i].dgyt * dt;
+    }
 
-      if (balls[i].y + balls[i].dy >= maxY - margin ||
-          balls[i].y + balls[i].dy < margin) {
-        balls[i].dy *= -1;
-      }
+    // (balls[i].x - tb_width() / 2.0) / 100
+    double cx = 0;
+    double cy = 0;
 
-      if (balls[i].y + balls[i].dy >= maxY - margin) {
-        balls[i].dgy -= 2;
-      }
+    for (int i = 0; i < nballs; i++) {
+      double dx = cx - balls[i].px;
+      double dy = cy - balls[i].py;
+      double dist2 = dx * dx + dy * dy + 1e-6; // avoid div by zero
+      double k = 1;                         // tune strength
 
-      if (balls[i].y + balls[i].dy < margin) {
-        balls[i].dgy += 2;
-      }
-      if (balls[i].x + balls[i].dx >= maxX - margin) {
-        balls[i].dgx -= 2;
-      }
+      balls[i].dgx += k * dx;
+      balls[i].dgy += k * dy;
+    }
 
-      if (balls[i].x + balls[i].dx < margin) {
-        balls[i].dgx += 2;
-      }
-      balls[i].x += balls[i].dx + (int)balls[i].dgx;
-      balls[i].y += balls[i].dy + (int)balls[i].dgy;
-
-      balls[i].dgy *= 0.8;
-      balls[i].dgx *= 0.8;
+    for (int i = 0; i < nballs; i++) {
+      balls[i].x = balls[i].px * 100 + tb_width() / 2.;
+      balls[i].y = balls[i].py * 100 + tb_height() / 2.;
     }
 
     // render
@@ -198,8 +200,8 @@ int main(int argc, char *argv[]) {
 
           for (int k = 0; k < nballs; k++) {
             int y = j * 2 + j2;
-            float dist_squared = abs((i - balls[k].x) * (i - balls[k].x)) +
-                                 abs((y - balls[k].y) * (y - balls[k].y));
+            float dist_squared = (i - balls[k].x) * (i - balls[k].x) +
+                                 (y - balls[k].y) * (y - balls[k].y);
             if (dist_squared == 0) {
               sum[j2] += FLT_MAX;
             } else {
@@ -390,8 +392,25 @@ void init_params() {
   for (int i = 0; i < MAX_NBALLS; i++) {
     balls[i].x = rand() % (maxX - 2 * margin) + margin;
     balls[i].y = rand() % (maxY - 2 * margin) + margin;
-    balls[i].dx = (rand() % 2 == 0) ? -1 : 1;
-    balls[i].dy = (rand() % 2 == 0) ? -1 : 1;
+
+    balls[i].px = (balls[i].x - tb_width() / 2.0) / 100;
+    balls[i].py = (balls[i].y - tb_height() / 2.0) / 100;
+
+    double r = sqrt(balls[i].px * balls[i].px + balls[i].py * balls[i].py);
+
+    if (r > 1e-6) {
+      // unit perpendicular vector
+      double tx = -balls[i].py / r;
+      double ty = balls[i].px / r;
+
+      double v = 0.5; // try 0.1–0.5
+      balls[i].dgx = tx * v;
+      balls[i].dgy = ty * v;
+    }
+    balls[i].dgxt = 0.0;
+    balls[i].dgyt = 0.0;
+
+    balls[i].mass = 0.5 + (rand() / (double)RAND_MAX);
   }
   if (gradient1) {
     tb_set_output_mode(TB_OUTPUT_TRUECOLOR);
