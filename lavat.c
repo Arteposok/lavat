@@ -397,19 +397,16 @@ void init_params() {
 
     double r = sqrt(balls[i].px * balls[i].px + balls[i].py * balls[i].py);
 
-    if (r > 1e-6) {
-      // unit perpendicular vector
-      double tx = -balls[i].py / r;
-      double ty = balls[i].px / r;
+    double tx = -balls[i].py / r;
+    double ty = balls[i].px / r;
 
-      double v = 0.5; // try 0.1–0.5
-      balls[i].dgx = tx * v;
-      balls[i].dgy = ty * v;
-    }
+    double v = 2;
+    balls[i].dgx = ty * v;
+    balls[i].dgy = tx * v;
     balls[i].dgxt = 0.0;
     balls[i].dgyt = 0.0;
 
-    balls[i].mass = 0.5 + (rand() / (double)RAND_MAX);
+    balls[i].mass = 0.5 + (rand() % 4);
   }
   if (gradient1) {
     tb_set_output_mode(TB_OUTPUT_TRUECOLOR);
