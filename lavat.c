@@ -51,6 +51,7 @@ static float sumConst2;
 static int maxX, maxY;
 static int speed;
 double dt = 0.01;
+double scale = 1e-1;
 static Ball balls[MAX_NBALLS] = {0};
 static struct tb_event event = {0};
 static short colors[] = {TB_WHITE, TB_RED,     TB_YELLOW, TB_BLUE,
@@ -128,6 +129,18 @@ void compute_positions(Ball balls[]) {
       balls[i].dgyt += force * dy;
     }
   }
+  double cx = 0;
+  double cy = 0;
+
+  for (int i = 0; i < nballs; i++) {
+    double dx = cx - balls[i].px;
+    double dy = cy - balls[i].py;
+    double dist2 = dx * dx + dy * dy + 1e-6; // avoid div by zero
+    double k = 1;                            // tune strength
+
+    balls[i].dgxt += k * dx;
+    balls[i].dgyt += k * dy;
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -171,23 +184,9 @@ int main(int argc, char *argv[]) {
       balls[i].dgy += 0.5 * balls[i].dgyt * dt;
     }
 
-    // (balls[i].x - tb_width() / 2.0) / 100
-    double cx = 0;
-    double cy = 0;
-
     for (int i = 0; i < nballs; i++) {
-      double dx = cx - balls[i].px;
-      double dy = cy - balls[i].py;
-      double dist2 = dx * dx + dy * dy + 1e-6; // avoid div by zero
-      double k = 1;                         // tune strength
-
-      balls[i].dgx += k * dx;
-      balls[i].dgy += k * dy;
-    }
-
-    for (int i = 0; i < nballs; i++) {
-      balls[i].x = balls[i].px * 100 + tb_width() / 2.;
-      balls[i].y = balls[i].py * 100 + tb_height() / 2.;
+      balls[i].x = balls[i].px * scale + maxX / 2.;
+      balls[i].y = balls[i].py * scale + maxY / 2.;
     }
 
     // render
@@ -393,8 +392,8 @@ void init_params() {
     balls[i].x = rand() % (maxX - 2 * margin) + margin;
     balls[i].y = rand() % (maxY - 2 * margin) + margin;
 
-    balls[i].px = (balls[i].x - tb_width() / 2.0) / 100;
-    balls[i].py = (balls[i].y - tb_height() / 2.0) / 100;
+    balls[i].px = (balls[i].x - maxX / 2.0) / scale;
+    balls[i].py = (balls[i].y - maxY / 2.0) / scale;
 
     double r = sqrt(balls[i].px * balls[i].px + balls[i].py * balls[i].py);
 
